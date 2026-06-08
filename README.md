@@ -1,44 +1,43 @@
-set a .env.local file with these params:
+# Aruba Business MCP Server (Symfony)
+
+Server MCP per la gestione dei servizi Aruba Business (Domini, Email, Hosting, Fatturazione).
+
+## Requisiti
+- PHP 8.3+
+- Symfony CLI (opzionale)
+- Composer
+
+## Configurazione
+
+Crea un file `.env.local` con i seguenti parametri:
 
 ```env
-DATABASE_URL="mysql://websites:password@host:3306/dbname?mariadb"
-DATABASE_LOGGER_URL="mysql://websites:password@host:3306/dbname_logger?mariadb"
+ARUBA_API_KEY="la_tua_api_key"
+ARUBA_USERNAME="il_tuo_username"
+ARUBA_PASSWORD="la_tua_password"
 ```
 
-### `composer install`
+## Installazione
 
-### `php bin/console lexik:jwt:generate-keypair`
-
-if the databese is new continue below
-
-### `php bin/console doctrine:migrations:migrate`
-
-copy table actions_log from DATABASE_URL in the DATABASE_LOGGER_URL (use phpMyadmin)
-
-temporary set security.yaml in config/packages:
-
-```
-access_control:
-# - { path: ^/admin, roles: ROLE_ADMIN }
-# - { path: ^/profile, roles: ROLE_USER }
-- { path: ^/login, roles: PUBLIC_ACCESS }
-- { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
-- { path: ^/,       roles: PUBLIC_ACCESS }
+```bash
+composer install
 ```
 
-start the server
+## Utilizzo
 
-### `symfony server:start`
-
-and post the first user using Postman ("NETEVOLUTION-DEFOULT/add User" -> change the email in "Body" -> Send)
-
-reset security.yaml in config/packages :
-
+### Login Iniziale
+Per ottenere il primo token di accesso:
+```bash
+php bin/console aruba:login
 ```
-access_control:
-    # - { path: ^/admin, roles: ROLE_ADMIN }
-    # - { path: ^/profile, roles: ROLE_USER }
-    - { path: ^/login, roles: PUBLIC_ACCESS }
-    - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
-    - { path: ^/,       roles: IS_AUTHENTICATED_FULLY }
+
+### Avvio Server MCP (Stdio)
+```bash
+php bin/console app:mcp-server
 ```
+
+### Avvio Server Web (HTTP/SSE)
+```bash
+symfony server:start
+```
+L'endpoint SSE sarà disponibile su `http://localhost:8000/mcp/sse`.

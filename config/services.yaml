@@ -5,6 +5,9 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
   app_name: 'Net-evolution Default'
+  aruba_business.api_key: '%env(ARUBA_API_KEY)%'
+  aruba_business.username: '%env(default::ARUBA_USERNAME)%'
+  aruba_business.password: '%env(default::ARUBA_PASSWORD)%'
 
 services:
   # default configuration for services in *this* file
@@ -18,39 +21,20 @@ services:
     resource: '../src/'
     exclude:
       - '../src/DependencyInjection/'
-      - '../src/Entity/'
       - '../src/Kernel.php'
-
-  app.listener.login_success:
-    class: App\Listeners\AuthenticationSuccessListener
-    arguments:
-      - '@lexik_jwt_authentication.handler.authentication_success'
-    tags:
-      - { name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess, priority: -2 }
-
 
   # add more service definitions when explicit configuration is needed
   # please note that last definitions always *replace* previous ones
-
-  App\Listeners\JWTRefreshListener:
-    arguments:
-      $tokenManager: '@lexik_jwt_authentication.jwt_manager'
-
-    tags:
-      - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_expired, method: onJWTExpired }
 
   App\Listeners\JsonExceptionListener:
     tags:
       - { name: kernel.event_listener, event: kernel.exception }
 
-  App\Service\MailerService:
+  App\Service\ArubaBusinessClient:
     arguments:
-      $mailer_reply_to: '%env(MAILER_REPLY_TO)%'
-      $mailer_sender: '%env(MAILER_SENDER)%'
-
-  App\Service\TotpService:
-    arguments:
-      $appName: '%app_name%'
+      $apiKey: '%aruba_business.api_key%'
+      $username: '%aruba_business.username%'
+      $password: '%aruba_business.password%'
 
 
 #  App\Listeners\LocaleListener:
