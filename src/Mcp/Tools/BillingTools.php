@@ -27,7 +27,7 @@ readonly class BillingTools
 
             public function getName(): string { return 'aruba_get_pricelist'; }
             public function getDescription(): string { return 'Ottieni il listino prezzi Aruba Business per tutti i servizi (domini, hosting, email)'; }
-            public function getInputSchema(): array { return ['type' => 'object', 'properties' => []]; }
+            public function getInputSchema(): array { return ['type' => 'object', 'properties' => (object)[]]; }
 
             public function execute(array $params): array {
                 return $this->client->getPriceList();
@@ -140,7 +140,7 @@ readonly class BillingTools
 
             public function getName(): string { return 'aruba_get_account_balance'; }
             public function getDescription(): string { return 'Verifica il saldo e il credito disponibile nel tuo account Aruba Business'; }
-            public function getInputSchema(): array { return ['type' => 'object', 'properties' => []]; }
+            public function getInputSchema(): array { return ['type' => 'object', 'properties' => (object)[]]; }
 
             public function execute(array $params): array {
                 return $this->client->getAccountBalance();

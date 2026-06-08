@@ -36,6 +36,7 @@ readonly class DomainTools
                         'page'     => ['type' => 'integer', 'description' => 'Pagina (default 1)', 'default' => 1],
                         'pageSize' => ['type' => 'integer', 'description' => 'Risultati per pagina (default 50)', 'default' => 50],
                     ],
+                    'required' => [],
                 ];
             }
 

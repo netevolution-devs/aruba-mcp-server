@@ -106,9 +106,11 @@ class McpServer
 
         return match ($method) {
             'initialize'          => $this->handleInitialize($id, $params),
-            'initialized'         => null, // notification, no response
+            'notifications/initialized' => null,
+            'initialized'         => null,
             'tools/list'          => $this->handleToolsList($id),
             'tools/call'          => $this->handleToolsCall($id, $params),
+            'logging/setLevel'    => $this->successResponse($id, []),
             'ping'                => $this->successResponse($id, []),
             default               => $this->errorResponse($id, -32601, "Method not found: $method"),
         };
@@ -119,13 +121,14 @@ class McpServer
         return $this->successResponse($id, [
             'protocolVersion' => self::PROTOCOL_VERSION,
             'capabilities'    => [
-                'tools' => ['listChanged' => false],
+                'tools' => ['listChanged' => true],
+                'logging' => (object)[],
             ],
             'serverInfo' => [
                 'name'    => self::SERVER_NAME,
                 'version' => self::SERVER_VERSION,
             ],
-            'instructions' => 'Server MCP per la gestione di Aruba Business: domini, DNS, email, hosting e fatturazione. Usa i tool disponibili per interrogare e modificare i servizi Aruba del cliente.',
+            'instructions' => 'Server MCP per la gestione di Aruba Business. I tool permettono di gestire domini, DNS, email, hosting e fatturazione.',
         ]);
     }
 
@@ -134,10 +137,22 @@ class McpServer
         $toolList = [];
 
         foreach ($this->tools as $tool) {
+            $schema = $tool->getInputSchema();
+            if (empty($schema)) {
+                $schema = ['type' => 'object', 'properties' => (object)[], 'required' => []];
+            } else {
+                if (isset($schema['properties']) && empty($schema['properties'])) {
+                    $schema['properties'] = (object)[];
+                }
+                if (!isset($schema['required'])) {
+                    $schema['required'] = [];
+                }
+            }
+
             $toolList[] = [
                 'name'        => $tool->getName(),
                 'description' => $tool->getDescription(),
-                'inputSchema' => $tool->getInputSchema(),
+                'inputSchema' => $schema,
             ];
         }
 
@@ -189,7 +204,7 @@ class McpServer
         return [
             'jsonrpc' => '2.0',
             'id'      => $id,
-            'result'  => $result,
+            'result'  => empty($result) ? (object)[] : $result,
         ];
     }
 

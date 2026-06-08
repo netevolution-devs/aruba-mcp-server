@@ -26,7 +26,7 @@ readonly class HostingTools
 
             public function getName(): string { return 'aruba_list_hosting'; }
             public function getDescription(): string { return 'Lista tutti i servizi hosting attivi nel pannello Aruba Business'; }
-            public function getInputSchema(): array { return ['type' => 'object', 'properties' => []]; }
+            public function getInputSchema(): array { return ['type' => 'object', 'properties' => (object)[]]; }
 
             public function execute(array $params): array {
                 return $this->client->listHostingServices();
@@ -89,7 +89,7 @@ readonly class HostingTools
 
             public function getName(): string { return 'aruba_list_servers'; }
             public function getDescription(): string { return 'Lista i server dedicati o VPS nel pannello Aruba Business'; }
-            public function getInputSchema(): array { return ['type' => 'object', 'properties' => []]; }
+            public function getInputSchema(): array { return ['type' => 'object', 'properties' => (object)[]]; }
 
             public function execute(array $params): array {
                 return $this->client->listServers();

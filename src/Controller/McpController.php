@@ -12,6 +12,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * HTTP + SSE transport for MCP.
  *
@@ -26,7 +28,10 @@ class McpController extends AbstractController
 {
     private FilesystemAdapter $cache;
 
-    public function __construct(private readonly McpServer $mcpServer) {
+    public function __construct(
+        private readonly McpServer $mcpServer,
+        private readonly LoggerInterface $logger
+    ) {
         $this->cache = new FilesystemAdapter('mcp_sessions', 3600);
     }
 
@@ -119,6 +124,8 @@ class McpController extends AbstractController
         $session = $item->get();
 
         $body = $request->getContent();
+        $this->logger->info('MCP Request Body: ' . $body);
+
         if (!json_validate($body)) {
             return new Response('Invalid JSON', 400);
         }

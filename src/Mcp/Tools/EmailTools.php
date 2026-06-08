@@ -33,6 +33,7 @@ readonly class EmailTools
                     'properties' => [
                         'domain' => ['type' => 'string', 'description' => 'Dominio (es. example.com). Lascia vuoto per tutti.'],
                     ],
+                    'required' => [],
                 ];
             }
 
@@ -136,6 +137,7 @@ readonly class EmailTools
                     'properties' => [
                         'domain' => ['type' => 'string', 'description' => 'Filtra per dominio (opzionale)'],
                     ],
+                    'required' => [],
                 ];
             }
 
