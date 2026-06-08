@@ -9,6 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Contracts\Cache\ItemInterface;
+
 /**
  * HTTP + SSE transport for MCP.
  *
@@ -21,10 +24,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/mcp')]
 class McpController extends AbstractController
 {
-    // Simple in-process session store (use Redis/APCu in production)
-    private static array $sessions = [];
+    private FilesystemAdapter $cache;
 
-    public function __construct(private readonly McpServer $mcpServer) {}
+    public function __construct(private readonly McpServer $mcpServer) {
+        $this->cache = new FilesystemAdapter('mcp_sessions', 3600);
+    }
 
     /**
      * SSE endpoint: client connects here and keeps the stream open.
@@ -36,32 +40,59 @@ class McpController extends AbstractController
         $sessionId = bin2hex(random_bytes(16));
         $postUrl   = $request->getSchemeAndHttpHost() . '/mcp/messages?sessionId=' . $sessionId;
 
-        self::$sessions[$sessionId] = [
-            'queue'     => [],
-            'connected' => true,
-        ];
+        $this->cache->get('mcp_session_' . $sessionId, function (ItemInterface $item) {
+            $item->expiresAfter(300);
+            return [
+                'queue'     => [],
+                'connected' => true,
+            ];
+        });
 
         $response = new StreamedResponse(function () use ($sessionId, $postUrl) {
+            // Disable PHP output buffering
+            while (ob_get_level() > 0) {
+                ob_end_flush();
+            }
+
             // Send the endpoint event as per MCP SSE spec
             echo "event: endpoint\n";
             echo "data: " . $postUrl . "\n\n";
+            
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
             flush();
 
             // Keep streaming — poll the session queue for messages
             $timeout = time() + 300; // 5 min max connection
 
-            while (time() < $timeout && (self::$sessions[$sessionId]['connected'] ?? false)) {
-                if (!empty(self::$sessions[$sessionId]['queue'])) {
-                    $msg = array_shift(self::$sessions[$sessionId]['queue']);
+            while (time() < $timeout) {
+                $session = $this->cache->get('mcp_session_' . $sessionId, function() { return null; });
+                
+                if (!$session || !($session['connected'] ?? false)) {
+                    break;
+                }
+
+                if (!empty($session['queue'])) {
+                    $msg = array_shift($session['queue']);
+                    
+                    // Update session in cache after shift
+                    $item = $this->cache->getItem('mcp_session_' . $sessionId);
+                    $item->set($session);
+                    $this->cache->save($item);
+
                     echo "event: message\n";
                     echo "data: " . json_encode($msg) . "\n\n";
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
                     flush();
                 }
 
-                usleep(100_000); // 100ms polling
+                usleep(200_000); // 200ms polling
             }
 
-            unset(self::$sessions[$sessionId]);
+            $this->cache->delete('mcp_session_' . $sessionId);
         });
 
         $response->headers->set('Content-Type', 'text/event-stream');
@@ -79,10 +110,13 @@ class McpController extends AbstractController
     public function messages(Request $request): Response
     {
         $sessionId = $request->query->get('sessionId');
+        $item = $this->cache->getItem('mcp_session_' . $sessionId);
 
-        if (!$sessionId || !isset(self::$sessions[$sessionId])) {
+        if (!$sessionId || !$item->isHit()) {
             return new Response('Session not found', 404);
         }
+
+        $session = $item->get();
 
         $body = $request->getContent();
         if (!json_validate($body)) {
@@ -95,7 +129,9 @@ class McpController extends AbstractController
         $response = $this->mcpServer->handleRequestPublic($bodyArray);
 
         if ($response !== null) {
-            self::$sessions[$sessionId]['queue'][] = $response;
+            $session['queue'][] = $response;
+            $item->set($session);
+            $this->cache->save($item);
         }
 
         return new Response('', 202); // Accepted
