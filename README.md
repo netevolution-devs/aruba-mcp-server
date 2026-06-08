@@ -15,6 +15,7 @@ Crea un file `.env.local` con i seguenti parametri:
 ARUBA_API_KEY="la_tua_api_key"
 ARUBA_USERNAME="il_tuo_username"
 ARUBA_PASSWORD="la_tua_password"
+MCP_AUTH_TOKEN="mcp_live_una_tua_chiave_segreta_lunga"
 ```
 
 ## Installazione

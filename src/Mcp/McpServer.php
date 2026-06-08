@@ -93,6 +93,11 @@ class McpServer
     // JSON-RPC DISPATCHER
     // ──────────────────────────────────────────────
 
+    public function handleRequestPublic(array $request): ?array
+    {
+        return $this->handleRequest($request);
+    }
+
     private function handleRequest(array $request): ?array
     {
         $id     = $request['id'] ?? null;
