@@ -121,8 +121,9 @@ class McpServer
         return $this->successResponse($id, [
             'protocolVersion' => self::PROTOCOL_VERSION,
             'capabilities'    => [
-                'tools' => ['listChanged' => true],
-                'logging' => (object)[],
+                'tools' => [
+                    'listChanged' => true,
+                ],
             ],
             'serverInfo' => [
                 'name'    => self::SERVER_NAME,
