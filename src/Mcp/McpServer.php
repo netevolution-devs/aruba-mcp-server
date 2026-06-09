@@ -14,9 +14,6 @@ use App\Mcp\Tools\OrdersTools;
 use App\Mcp\Tools\PricelistTools;
 use App\Mcp\Tools\ServicesTools;
 use App\Mcp\Tools\TicketsTools;
-use App\Mcp\Tools\EmailTools;
-use App\Mcp\Tools\HostingTools;
-use App\Mcp\Tools\BillingTools;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,9 +41,6 @@ class McpServer
         private PricelistTools $pricelistTools,
         private ServicesTools $servicesTools,
         private TicketsTools $ticketsTools,
-        private EmailTools   $emailTools,
-        private HostingTools $hostingTools,
-        private BillingTools $billingTools,
         private LoggerInterface $logger,
     ) {
         $this->tools = [];
@@ -67,9 +61,6 @@ class McpServer
             $this->pricelistTools->getAll(),
             $this->servicesTools->getAll(),
             $this->ticketsTools->getAll(),
-            $this->emailTools->getAll(),
-            $this->hostingTools->getAll(),
-            $this->billingTools->getAll(),
         );
 
         foreach ($all as $tool) {
