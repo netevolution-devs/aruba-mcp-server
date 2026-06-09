@@ -41,14 +41,13 @@ class ArubaBusinessClient
         private readonly string $password,
         private readonly ?LoggerInterface $logger = null,
     ) {
-        $this->loadTokens();
     }
 
     // ──────────────────────────────────────────────
     // TOKEN PERSISTENCE
     // ──────────────────────────────────────────────
 
-    private function loadTokens(): void
+    public function loadTokens(): void
     {
         if (!file_exists(self::TOKEN_FILE)) {
             return;
@@ -68,18 +67,11 @@ class ArubaBusinessClient
         }
     }
 
-    private function saveTokens(): void
+    public function saveTokens(): void
     {
-        $dir = dirname(self::TOKEN_FILE);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0750, true);
-        }
-
-        file_put_contents(self::TOKEN_FILE, json_encode([
-            'access_token'  => $this->accessToken,
-            'refresh_token' => $this->refreshToken,
-            'expires_at'    => $this->tokenExpiry,
-        ], JSON_PRETTY_PRINT));
+        // No-op in multi-user OAuth flow. 
+        // Tokens are managed by TokenRepository or explicitly injected.
+        // This method is kept for BC but does nothing.
     }
 
     // ──────────────────────────────────────────────
@@ -90,7 +82,7 @@ class ArubaBusinessClient
      * Full login: POST /auth/token  (OAuth2 password grant)
      * Matches exactly the Conf.php AcquireToken() logic.
      */
-    public function authenticate(): void
+    public function authenticate(): array
     {
         $this->logger?->info('ArubaBusinessClient: authenticating (password grant)');
 
@@ -106,7 +98,10 @@ class ArubaBusinessClient
             ]),
         ]);
 
-        $this->storeTokenResponse($response->toArray());
+        $data = $response->toArray();
+        $this->storeTokenResponse($data);
+
+        return $data;
     }
 
     /**
@@ -155,7 +150,7 @@ class ArubaBusinessClient
         $this->logger?->info(sprintf('ArubaBusinessClient: token stored, expires in %ds', $expiresIn));
     }
 
-    private function ensureValidToken(): void
+    public function ensureValidToken(): void
     {
         if ($this->accessToken && time() < $this->tokenExpiry) {
             return; // still valid
@@ -164,7 +159,15 @@ class ArubaBusinessClient
         if ($this->refreshToken) {
             $this->refreshAccessToken();
         } else {
-            $this->authenticate();
+            // In OAuth flow we might not have the global password
+            // So we just log a warning. The controller should have ensured 
+            // we had valid tokens from the repository.
+            $this->logger?->warning('ArubaBusinessClient: token expired and no refresh token available');
+            
+            // Still try to authenticate if password is set (legacy behavior)
+            if ($this->password && $this->username) {
+                $this->authenticate();
+            }
         }
     }
 
@@ -249,7 +252,7 @@ class ArubaBusinessClient
     /**
      * Login with explicit credentials (used by aruba:login command).
      */
-    public function authenticateWith(string $username, string $password, ?string $otp = null): void
+    public function authenticateWith(string $username, string $password, ?string $otp = null): array
     {
         $this->logger?->info('ArubaBusinessClient: authenticating with provided credentials');
 
@@ -278,7 +281,10 @@ class ArubaBusinessClient
             throw new \RuntimeException("Login failed (HTTP $status): $body");
         }
 
-        $this->storeTokenResponse($response->toArray());
+        $data = $response->toArray();
+        $this->storeTokenResponse($data);
+
+        return $data;
     }
 
     /** Inject tokens from outside (e.g. fetched by another process) */

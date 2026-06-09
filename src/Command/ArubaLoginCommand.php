@@ -74,7 +74,8 @@ class ArubaLoginCommand extends Command
 
         try {
             // Esegue l'autenticazione iniettando le credenziali nel client
-            $this->client->authenticateWith($username, $password, $otp);
+            $tokens = $this->client->authenticateWith($username, $password, $otp);
+            $this->saveTokens($tokens);
 
             $expiry = $this->client->getTokenExpiresAt();
 
@@ -102,5 +103,19 @@ class ArubaLoginCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    private function saveTokens(array $tokens): void
+    {
+        $dir = dirname(self::TOKEN_FILE);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0750, true);
+        }
+
+        file_put_contents(self::TOKEN_FILE, json_encode([
+            'access_token'  => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'] ?? null,
+            'expires_at'    => time() + ($tokens['expires_in'] ?? 86400),
+        ], JSON_PRETTY_PRINT));
     }
 }

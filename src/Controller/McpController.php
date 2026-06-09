@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Mcp\McpServer;
+use App\Repository\TokenRepository;
+use App\Service\ArubaBusinessClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,6 +32,8 @@ class McpController extends AbstractController
 
     public function __construct(
         private readonly McpServer $mcpServer,
+        private readonly ArubaBusinessClient $arubaClient,
+        private readonly TokenRepository $tokenRepository,
         private readonly LoggerInterface $logger
     ) {
         $this->cache = new FilesystemAdapter('mcp_sessions', 3600);
@@ -152,6 +156,40 @@ class McpController extends AbstractController
 
     private function handleMcpPost(Request $request): Response
     {
+        $authorization = $request->headers->get('Authorization');
+
+        if (!$authorization || !str_starts_with($authorization, 'Bearer ')) {
+            return $this->json([
+                'jsonrpc' => '2.0',
+                'id' => null,
+                'error' => [
+                    'code' => -32001,
+                    'message' => 'Unauthorized: Missing or invalid Bearer token',
+                ],
+            ], 401);
+        }
+
+        $mcpToken = substr($authorization, 7);
+        $tokens = $this->tokenRepository->getTokensByMcpToken($mcpToken);
+
+        if (!$tokens) {
+            return $this->json([
+                'jsonrpc' => '2.0',
+                'id' => null,
+                'error' => [
+                    'code' => -32001,
+                    'message' => 'Unauthorized: Token not found or expired',
+                ],
+            ], 401);
+        }
+
+        // Configura il client Aruba con i token dell'utente
+        $this->arubaClient->setTokens(
+            $tokens['aruba_access_token'],
+            $tokens['aruba_refresh_token'],
+            $tokens['aruba_expires_at'] - time()
+        );
+
         $body = $request->getContent();
         $this->logger->info('MCP Request Body: ' . $body);
 
