@@ -138,17 +138,7 @@ class McpServer
         $toolList = [];
 
         foreach ($this->tools as $tool) {
-            $schema = $tool->getInputSchema();
-            if (empty($schema)) {
-                $schema = ['type' => 'object', 'properties' => (object)[], 'required' => []];
-            } else {
-                if (isset($schema['properties']) && empty($schema['properties'])) {
-                    $schema['properties'] = (object)[];
-                }
-                if (!isset($schema['required'])) {
-                    $schema['required'] = [];
-                }
-            }
+            $schema = $this->normalizeInputSchema($tool->getInputSchema());
 
             $toolList[] = [
                 'name'        => $tool->getName(),
@@ -158,6 +148,33 @@ class McpServer
         }
 
         return $this->successResponse($id, ['tools' => $toolList]);
+    }
+
+    private function normalizeInputSchema(array $schema): array
+    {
+        if ($schema === []) {
+            return [
+                'type' => 'object',
+                'properties' => (object)[],
+                'required' => [],
+            ];
+        }
+
+        $schema['type'] ??= 'object';
+
+        if (!array_key_exists('properties', $schema)) {
+            $schema['properties'] = (object)[];
+        }
+
+        if ($schema['properties'] === []) {
+            $schema['properties'] = (object)[];
+        }
+
+        if (!array_key_exists('required', $schema)) {
+            $schema['required'] = [];
+        }
+
+        return $schema;
     }
 
     private function handleToolsCall(mixed $id, array $params): array
