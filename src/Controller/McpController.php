@@ -101,7 +101,8 @@ class McpController extends AbstractController
         });
 
         $response->headers->set('Content-Type', 'text/event-stream');
-        $response->headers->set('Cache-Control', 'no-cache');
+        $response->headers->set('Cache-Control', 'no-cache, no-transform');
+        $response->headers->set('Connection', 'keep-alive');
         $response->headers->set('X-Accel-Buffering', 'no'); // disable nginx buffering
 
         return $response;
