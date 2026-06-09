@@ -2,6 +2,7 @@
 
 namespace App\Mcp;
 
+use App\Mcp\Tools\AuthTools;
 use App\Mcp\Tools\McpToolInterface;
 use App\Mcp\Tools\CartsTools;
 use App\Mcp\Tools\CustomersTools;
@@ -30,6 +31,7 @@ class McpServer
     private array $tools;
 
     public function __construct(
+        private AuthTools $authTools,
         private CartsTools $cartsTools,
         private CustomersTools $customersTools,
         private DelegatedUsersTools $delegatedUsersTools,
@@ -50,6 +52,7 @@ class McpServer
     private function registerTools(): void
     {
         $all = array_merge(
+            $this->authTools->getAll(),
             $this->cartsTools->getAll(),
             $this->customersTools->getAll(),
             $this->delegatedUsersTools->getAll(),
