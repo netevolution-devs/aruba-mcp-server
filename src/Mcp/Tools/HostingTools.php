@@ -95,13 +95,7 @@ readonly class HostingTools
 
             public function getName(): string { return 'aruba_list_servers'; }
             public function getDescription(): string { return 'Lista i server dedicati o VPS nel pannello Aruba Business'; }
-            public function getInputSchema(): array {
-                return [
-                    'type' => 'object',
-                    'properties' => (object)[],
-                    'required' => [],
-                ];
-            }
+            public function getInputSchema(): array { return ['type' => 'object', 'properties' => (object)[]]; }
 
             public function execute(array $params): array {
                 return $this->client->listServers();

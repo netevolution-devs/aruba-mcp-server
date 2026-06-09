@@ -178,6 +178,10 @@ class McpController extends AbstractController
             return new Response('', 204);
         }
 
-        return $this->json($response);
+        return new Response(
+            json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+            200,
+            ['Content-Type' => 'application/json']
+        );
     }
 }
