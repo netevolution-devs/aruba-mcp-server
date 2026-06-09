@@ -231,20 +231,27 @@ class ArubaBusinessClient
     /**
      * Login with explicit credentials (used by aruba:login command).
      */
-    public function authenticateWith(string $username, string $password): void
+    public function authenticateWith(string $username, string $password, ?string $otp = null): void
     {
         $this->logger?->info('ArubaBusinessClient: authenticating with provided credentials');
+
+        $payload = [
+            'grant_type' => 'password',
+            'username' => $username,
+            'password' => $password,
+        ];
+
+        if ($otp !== null && $otp !== '') {
+            $payload['otp'] = $otp;
+        }
+
 
         $response = $this->httpClient->request('POST', self::HOST . '/auth/token', [
             'headers' => [
                 'Content-Type'      => 'application/x-www-form-urlencoded',
                 'Authorization-Key' => $this->apiKey,
             ],
-            'body' => http_build_query([
-                'grant_type' => 'password',
-                'username'   => $username,
-                'password'   => $password,
-            ]),
+            'body' => http_build_query($payload),
         ]);
 
         $status = $response->getStatusCode();
