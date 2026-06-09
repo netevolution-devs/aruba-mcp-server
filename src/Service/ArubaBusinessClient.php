@@ -26,9 +26,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class ArubaBusinessClient
 {
-    private const string HOST        = 'https://api.arubabusiness.it';
-    private const string TOKEN_FILE  = __DIR__ . '/../../var/aruba_tokens.json';
-    private const int    TOKEN_TTL   = 3500; // seconds (slightly under real TTL)
+    private const  HOST        = 'https://api.arubabusiness.it';
+    private const  TOKEN_FILE  = __DIR__ . '/../../var/aruba_tokens.json';
+    private const     TOKEN_TTL   = 3500; // seconds (slightly under real TTL)
 
     private ?string $accessToken  = null;
     private ?string $refreshToken = null;
@@ -250,7 +250,7 @@ class ArubaBusinessClient
         $status = $response->getStatusCode();
         if ($status >= 400) {
             $body = $response->getContent(false);
-            throw new RuntimeException("Login failed (HTTP $status): $body");
+            throw new \RuntimeException("Login failed (HTTP $status): $body");
         }
 
         $this->storeTokenResponse($response->toArray());
