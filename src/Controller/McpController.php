@@ -114,15 +114,6 @@ class McpController extends AbstractController
     #[Route('/messages', name: 'mcp_messages', methods: ['POST'])]
     public function messages(Request $request): Response
     {
-        $sessionId = $request->query->get('sessionId');
-        $item = $this->cache->getItem('mcp_session_' . $sessionId);
-
-        if (!$sessionId || !$item->isHit()) {
-            return new Response('Session not found', 404);
-        }
-
-        $session = $item->get();
-
         $body = $request->getContent();
         $this->logger->info('MCP Request Body: ' . $body);
 
@@ -131,17 +122,26 @@ class McpController extends AbstractController
         }
 
         $bodyArray = json_decode($body, true);
+        $response  = $this->mcpServer->handleRequestPublic($bodyArray);
 
-        // Process the MCP request
-        $response = $this->mcpServer->handleRequestPublic($bodyArray);
-
-        if ($response !== null) {
-            $session['queue'][] = $response;
-            $item->set($session);
-            $this->cache->save($item);
+        // Gestisci anche la sessione SSE se presente (per client SSE-based)
+        $sessionId = $request->query->get('sessionId');
+        if ($sessionId) {
+            $item = $this->cache->getItem('mcp_session_' . $sessionId);
+            if ($item->isHit() && $response !== null) {
+                $session = $item->get();
+                $session['queue'][] = $response;
+                $item->set($session);
+                $this->cache->save($item);
+            }
         }
 
-        return new Response('', 202); // Accepted
+        // Risposta diretta JSON-RPC (richiesta da ChatGPT e client sincroni)
+        if ($response === null) {
+            return new Response('', 204);
+        }
+
+        return $this->json($response);
     }
 
     /**

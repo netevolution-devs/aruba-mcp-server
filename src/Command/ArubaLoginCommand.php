@@ -58,8 +58,15 @@ class ArubaLoginCommand extends Command
 
         $password = $io->askHidden('Password');
 
+        $otp = $io->ask('OTP Aruba', $_ENV['ARUBA_OTP'] ?? null);
+
         if (!$username || !$password) {
             $io->error('Username e password sono obbligatori.');
+            return Command::FAILURE;
+        }
+
+        if (!$otp) {
+            $io->error('OTP Aruba obbligatorio per questo account.');
             return Command::FAILURE;
         }
 
@@ -67,7 +74,7 @@ class ArubaLoginCommand extends Command
 
         try {
             // Esegue l'autenticazione iniettando le credenziali nel client
-            $this->client->authenticateWith($username, $password);
+            $this->client->authenticateWith($username, $password, $otp);
 
             $expiry = $this->client->getTokenExpiresAt();
 
