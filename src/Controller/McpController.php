@@ -39,7 +39,7 @@ class McpController extends AbstractController
      * SSE endpoint: client connects here and keeps the stream open.
      * Server sends back the POST endpoint URL as first event.
      */
-    #[Route('/sse', name: 'mcp_sse', methods: ['GET', 'POST'])]
+    #[Route('/sse', name: 'mcp_sse', methods: ['GET'])]
     public function sse(Request $request): StreamedResponse
     {
         $sessionId = bin2hex(random_bytes(16));
