@@ -35,6 +35,20 @@ class McpController extends AbstractController
         $this->cache = new FilesystemAdapter('mcp_sessions', 3600);
     }
 
+    #[Route('', name: 'mcp_root', methods: ['GET', 'POST'])]
+    public function root(Request $request): Response
+    {
+        if ($request->isMethod('GET')) {
+            return $this->json([
+                'status' => 'ok',
+                'server' => 'aruba-business-mcp',
+                'transport' => 'streamable-http',
+            ]);
+        }
+
+        return $this->handleMcpPost($request);
+    }
+
     /**
      * SSE endpoint: client connects here and keeps the stream open.
      * Server sends back the POST endpoint URL as first event.
