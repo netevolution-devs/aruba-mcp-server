@@ -203,6 +203,24 @@ class ArubaBusinessClient
         return $this->request('DELETE', $path);
     }
 
+    public function call(string $method, string $path, array $params = []): array
+    {
+        $method = strtoupper($method);
+        $options = [];
+
+        // Separiamo i parametri che vanno nel path da quelli che vanno in query o body
+        // Per semplicità, in questa implementazione dinamica, assumiamo che chi chiama il metodo
+        // abbia già sostituito i segnaposto nel path, oppure forniamo un modo per farlo.
+        
+        if ($method === 'GET' || $method === 'DELETE') {
+            $options['query'] = array_filter($params, fn($v) => $v !== null && $v !== '');
+        } else {
+            $options['json'] = $params;
+        }
+
+        return $this->request($method, $path, $options);
+    }
+
     private function request(string $method, string $path, array $options = [], bool $retried = false): array
     {
         $options['headers'] = $this->getHeaders();

@@ -3,7 +3,17 @@
 namespace App\Mcp;
 
 use App\Mcp\Tools\McpToolInterface;
-use App\Mcp\Tools\DomainTools;
+use App\Mcp\Tools\CartsTools;
+use App\Mcp\Tools\CustomersTools;
+use App\Mcp\Tools\DelegatedUsersTools;
+use App\Mcp\Tools\DomainsTools;
+use App\Mcp\Tools\EndUsersTools;
+use App\Mcp\Tools\EmailProfessionalTools;
+use App\Mcp\Tools\NotificationsTools;
+use App\Mcp\Tools\OrdersTools;
+use App\Mcp\Tools\PricelistTools;
+use App\Mcp\Tools\ServicesTools;
+use App\Mcp\Tools\TicketsTools;
 use App\Mcp\Tools\EmailTools;
 use App\Mcp\Tools\HostingTools;
 use App\Mcp\Tools\BillingTools;
@@ -23,7 +33,17 @@ class McpServer
     private array $tools;
 
     public function __construct(
-        private DomainTools  $domainTools,
+        private CartsTools $cartsTools,
+        private CustomersTools $customersTools,
+        private DelegatedUsersTools $delegatedUsersTools,
+        private DomainsTools $domainsTools,
+        private EndUsersTools $endUsersTools,
+        private EmailProfessionalTools $emailProfessionalTools,
+        private NotificationsTools $notificationsTools,
+        private OrdersTools $ordersTools,
+        private PricelistTools $pricelistTools,
+        private ServicesTools $servicesTools,
+        private TicketsTools $ticketsTools,
         private EmailTools   $emailTools,
         private HostingTools $hostingTools,
         private BillingTools $billingTools,
@@ -36,7 +56,17 @@ class McpServer
     private function registerTools(): void
     {
         $all = array_merge(
-            $this->domainTools->getAll(),
+            $this->cartsTools->getAll(),
+            $this->customersTools->getAll(),
+            $this->delegatedUsersTools->getAll(),
+            $this->domainsTools->getAll(),
+            $this->endUsersTools->getAll(),
+            $this->emailProfessionalTools->getAll(),
+            $this->notificationsTools->getAll(),
+            $this->ordersTools->getAll(),
+            $this->pricelistTools->getAll(),
+            $this->servicesTools->getAll(),
+            $this->ticketsTools->getAll(),
             $this->emailTools->getAll(),
             $this->hostingTools->getAll(),
             $this->billingTools->getAll(),
