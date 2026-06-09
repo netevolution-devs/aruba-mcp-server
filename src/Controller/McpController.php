@@ -39,9 +39,14 @@ class McpController extends AbstractController
      * SSE endpoint: client connects here and keeps the stream open.
      * Server sends back the POST endpoint URL as first event.
      */
-    #[Route('/sse', name: 'mcp_sse', methods: ['GET'])]
-    public function sse(Request $request): StreamedResponse
+    #[Route('/sse', name: 'mcp_sse', methods: ['GET', 'POST'])]
+    public function sse(Request $request): Response
     {
+        if ($request->isMethod('POST')) {
+            return $this->handleMcpPost($request);
+        }
+
+        set_time_limit(0);
         $sessionId = bin2hex(random_bytes(16));
         $postUrl   = $request->getSchemeAndHttpHost() . '/mcp/messages?sessionId=' . $sessionId;
 
@@ -115,34 +120,7 @@ class McpController extends AbstractController
     #[Route('/messages', name: 'mcp_messages', methods: ['POST'])]
     public function messages(Request $request): Response
     {
-        $body = $request->getContent();
-        $this->logger->info('MCP Request Body: ' . $body);
-
-        if (!json_validate($body)) {
-            return new Response('Invalid JSON', 400);
-        }
-
-        $bodyArray = json_decode($body, true);
-        $response  = $this->mcpServer->handleRequestPublic($bodyArray);
-
-        // Gestisci anche la sessione SSE se presente (per client SSE-based)
-        $sessionId = $request->query->get('sessionId');
-        if ($sessionId) {
-            $item = $this->cache->getItem('mcp_session_' . $sessionId);
-            if ($item->isHit() && $response !== null) {
-                $session = $item->get();
-                $session['queue'][] = $response;
-                $item->set($session);
-                $this->cache->save($item);
-            }
-        }
-
-        // Risposta diretta JSON-RPC (richiesta da ChatGPT e client sincroni)
-        if ($response === null) {
-            return new Response('', 204);
-        }
-
-        return $this->json($response);
+        return $this->handleMcpPost($request);
     }
 
     /**
@@ -156,5 +134,36 @@ class McpController extends AbstractController
             'server'  => 'aruba-business-mcp',
             'version' => '1.0.0',
         ]);
+    }
+
+    private function handleMcpPost(Request $request): Response
+    {
+        $body = $request->getContent();
+        $this->logger->info('MCP Request Body: ' . $body);
+
+        if (!json_validate($body)) {
+            return new Response('Invalid JSON', 400);
+        }
+
+        $bodyArray = json_decode($body, true);
+        $response  = $this->mcpServer->handleRequestPublic($bodyArray);
+
+        // Gestisci anche la sessione SSE se presente
+        $sessionId = $request->query->get('sessionId');
+        if ($sessionId) {
+            $item = $this->cache->getItem('mcp_session_' . $sessionId);
+            if ($item->isHit() && $response !== null) {
+                $session = $item->get();
+                $session['queue'][] = $response;
+                $item->set($session);
+                $this->cache->save($item);
+            }
+        }
+
+        if ($response === null) {
+            return new Response('', 204);
+        }
+
+        return $this->json($response);
     }
 }
